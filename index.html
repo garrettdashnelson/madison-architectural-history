@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<meta charset="utf-8">
+<head>
+<title>Growing Madison</title>
+<style type="text/css">
+
+.line { fill: none;
+	stroke: steelblue;
+	stroke-width: 1.5px;
+}
+
+.x.axis path {
+  display: none;
+}
+
+.x-brush .extent {
+  stroke:#737373;
+  fill-opacity:0.125;
+  shape-rendering:crispEdges;
+  }
+
+.tick {
+	font-family: 'Helvetica',sans-serif;
+	font-size: 0.8em;
+}
+
+#brush-holder { 
+	position: fixed;
+	bottom: 0;
+	width: 100%;
+}
+
+</style>
+</head>
+
+<body>
+<div id="map"></div>
+<div id="brush-holder"></div>
+
+</body>
+
+<script src="http://d3js.org/d3.v3.min.js"></script>
+<script>
+
+var c_width = window.innerWidth,
+    c_height = window.innerHeight;
+
+var canvas = d3.select("#map").append("canvas")
+    .attr("width", c_width)
+    .attr("height", c_height);
+    
+var context = canvas.node().getContext("2d");
+
+var origin = [-89.597733,43.176641],
+	end = [-89.189866,42.971497];
+	
+var transform = c_width/(Math.abs(end[0] - origin[0]));
+	
+var colors = {
+
+"Apartment" : "#205E31",
+"Contemporary" : "#7BD493",
+"Modern two story" : "#1CEB55",
+"New style modern international" : "#C4FFBD",
+"Hi-rise" : "#469952",
+
+"Ranch" : "#44C5FC",
+"Bi-level" : "#2185B0",
+"Split-level" : "#315A6B",
+
+"Bungalow" : "#FF3012",
+"Cape Cod" : "#FF7D47",
+"Colonial" : "#FF4351",
+
+"Spanish mediterranean" : "#E5D32C",
+"Tudor" : "#E5B01E",
+"Victorian georgian regency" : "#DBE524",
+
+
+"Converted" : "#972C99",
+"Cottage" : "#66164D",
+"Flat" : "#503566",
+"Garden" : "#B24EA0", 
+"Garden with loft" : "#8A3C7C",
+
+"Mansion" : "#38251B",
+"Old Style" : "#382203",
+"Rowhouse" : "#38080D" ,
+"Townhouse" : "#38272E",
+
+"Other" : "#434343"
+
+}
+
+function drawPoint(lonlat, style) {
+
+var x = (Math.abs(lonlat[0]-origin[0])) * transform;
+var y = (Math.abs(lonlat[1]-origin[1])) * transform;
+
+if(colors[style]) { context.fillStyle = colors[style]; } else { context.fillStyle = "#000"; }
+context.fillRect(x,y,1,1);
+
+} 
+
+
+function renderCanvas(start_year, end_year) {
+
+context.clearRect(0,0,c_width,c_height);
+
+d3.csv("./data/madison.csv", function(error, data) { 
+	
+	data.forEach( function(d) { 
+		if(d.year >= start_year && d.year <= end_year) {
+		drawPoint( [+d.lon, +d.lat], d.style ); } } ); 
+	
+ } );
+
+}
+
+
+var margin = {top: 20, right: 60, bottom: 40, left: 20},
+    width = c_width - margin.left - margin.right,
+    height = 100 - margin.top - margin.bottom;
+
+var x = d3.time.scale()
+    .range([0, width]);
+
+var y = d3.scale.linear()
+    .range([height, 0]);
+
+var xAxis = d3.svg.axis()
+    .scale(x)
+    .orient("bottom");
+
+var line = d3.svg.line()
+    .x(function(d) { return x(d.year); })
+    .y(function(d) { return y(d.builds); });
+
+var svg = d3.select("#brush-holder").append("svg")
+    .attr("width", width + margin.left + margin.right)
+    .attr("height", height + margin.top + margin.bottom)
+    .append("g")
+    .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+
+var parseDate = d3.time.format("%Y").parse;
+
+var brush = d3.svg.brush()
+	.x(x)
+	.on('brushend',renderFromBrush)
+
+d3.csv("./data/yeartotals.csv", function(error, data) {
+	data.forEach(function(d) {
+    d.year = parseDate(d.year);
+    d.builds = +d.builds;
+  });
+
+  
+
+ x.domain(d3.extent(data, function(d) { return d.year; }));
+ y.domain(d3.extent(data, function(d) { return d.builds; }));
+
+
+  svg.append("g")
+      .attr("class", "x axis")
+      .attr("transform", "translate(0," + height + ")")
+      .call(xAxis);
+
+  svg.append("path")
+      .datum(data)
+      .attr("class", "line")
+      .attr("d", line);
+
+      svg.append("g")
+      	.attr("class","x-brush")
+      	.call(brush)
+      	.selectAll("rect")
+      	.attr("y", -2)
+      	.attr('height',height+4)
+});
+
+
+function renderFromBrush() {
+
+	var timeFormat = d3.time.format("%Y");
+
+	if(brush.empty()) { console.log("nothing!"); renderCanvas(0,2500); }
+	else {
+
+		start_year = timeFormat(brush.extent()[0]);
+		end_year = timeFormat(brush.extent()[1]);
+
+		renderCanvas(start_year,end_year);
+	}
+
+
+}
+
+
+renderCanvas(0,2015);
+
+      
+
+
+</script>
