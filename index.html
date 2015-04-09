@@ -6,6 +6,8 @@
 
 body { font-family: 'Helvetica','Helvetica Neue','Arial',sans-serif; }
 
+#map { width: 80%; height: 350px;}
+
 #top-holder {
   position: fixed;
   top: 0;
@@ -87,12 +89,14 @@ A very much in-progress project by <a href="http://people.matinic.us/garrett/">G
 
 </div>
 
-<div id="brush-holder"></div>
+<div id="brush-holder"></div> -->
 
 </body>
 
 <script src="http://d3js.org/d3.v3.min.js"></script>
 <script src="https://ajax.googleapis.com/ajax/libs/jquery/2.1.3/jquery.min.js"></script>
+<script src="http://cdn.leafletjs.com/leaflet-0.7.2/leaflet.js"></script>
+<script src='./canvas_overlay.js'></script>
 
 <script>
 
@@ -103,20 +107,7 @@ function triggerMenu(choice,all) {
 
 }
 
-var c_width = window.innerWidth,
-    c_height = window.innerHeight;
 
-var canvas = d3.select("#map").append("canvas")
-    .attr("width", c_width)
-    .attr("height", c_height);
-    
-var context = canvas.node().getContext("2d");
-
-var origin = [-89.597733,43.176641],
-	end = [-89.189866,42.971497];
-	
-var transform = c_width/(Math.abs(end[0] - origin[0]));
-	
 var colors = {
 
 "Apartment" : "#205E31",
@@ -153,20 +144,54 @@ var colors = {
 
 }
 
-function drawPoint(lonlat, style) {
 
-var x = (Math.abs(lonlat[0]-origin[0])) * transform;
-var y = (Math.abs(lonlat[1]-origin[1])) * transform;
+var the_map = L.map('map');
 
-if(colors[style]) { context.fillStyle = colors[style]; } else { context.fillStyle = "#000"; }
-context.fillRect(x,y,1,1);
+the_map.setView([43.074907,-89.38556],12);
 
-} 
+L.tileLayer("http://{s}.sm.mapstack.stamen.com/(toner-lite,$fff[difference],$fff[@23],$fff[hsl-saturation@20])/{z}/{x}/{y}.png")
+    .addTo(the_map);
 
 
-function renderCanvas(start_year, end_year) {
+// var points = ( function() {
+//       var json = null;
+//       $.ajax({
+//         'async': false,
+//         'global': false,
+//         'url': './data/madison.json',
+//         'dataType': "json",
+//         'success': function(data) {
+//         json = data;
+//         }
+//       });
+//       return json;
+//       })();
 
-context.clearRect(0,0,c_width,c_height);
+// L.canvasOverlay()
+//   .params({data: points})
+//     .drawing(colorDots)
+//     .addTo(the_map);
+
+//         function colorDots(canvasOverlay, params, data) {
+//             var ctx = params.canvas.getContext('2d');
+//             ctx.clearRect(0, 0, params.canvas.width, params.canvas.height);
+//             params.options.data.features.map(function (d, i) {
+//                 if (params.bounds.contains([d.geometry.coordinates[1],d.geometry.coordinates[0]])) {
+//                     dot = canvasOverlay._map.latLngToContainerPoint([d.geometry.coordinates[1],d.geometry.coordinates[0]]);
+//                     var style = d.properties.style;
+//                 if(colors[style]) { var color = colors[style]; } else { var color = "#ccc"; } 
+//                 ctx.fillStyle = color;
+//                 if(params.zoom > 14) { var rad = 3; } else if (params.zoom > 12) { var rad = 1; } else { var rad = 0.5; }
+//                     ctx.beginPath();
+//                     ctx.arc(dot.x, dot.y, rad, 0, Math.PI*2);
+//                     ctx.fill();
+//                     ctx.closePath();
+//                 }
+//             });
+//         };
+
+
+/*
 
 d3.csv("./data/madison.csv", function(error, data) { 
 	
@@ -174,9 +199,9 @@ d3.csv("./data/madison.csv", function(error, data) {
 		if(d.year >= start_year && d.year <= end_year) {
 		drawPoint( [+d.lon, +d.lat], d.style ); } } ); 
 	
- } );
+ }
 
-}
+
 
 var margin = {top: 20, right: 60, bottom: 40, left: 20},
     width = c_width - margin.left - margin.right,
@@ -274,6 +299,6 @@ legend_html += '</div>';
 $("#legend-innards").html(legend_html)
 
 $("#about-content").width($("#title-bar").width()-16); 
-
+*/
 
 </script>
