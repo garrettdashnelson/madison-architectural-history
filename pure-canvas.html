@@ -1,42 +1,10 @@
 <!DOCTYPE html>
 <meta charset="utf-8">
 <head>
-
-<link rel="stylesheet" href="http://cdn.leafletjs.com/leaflet-0.7.2/leaflet.css" />
-
+<title>Growing Madison</title>
 <style type="text/css">
 
-body, html { width: 100%; height: 100%; margin: 0; padding: 0;}
-body { background-color: rgb(77,77,77); font-family: 'Helvetica','Helvetica Neue','Arial',sans-serif; }
-
-#map { width: 100%; height: 80%; border: 0; margin-left: auto; margin-right: auto; }
-
-.line { fill: none;
-	stroke: steelblue;
-	stroke-width: 1.5px;
-}
-
-.x.axis path {
-  display: none;
-}
-
-.x-brush .extent {
-  stroke:#737373;
-  fill: #F4CC38;
-  fill-opacity:0.125;
-  shape-rendering:crispEdges;
-  }
-
-.tick {
-	font-size: 0.8em;
-  fill: #eee; 
-}
-
-#brush-holder { 
-	position: fixed;
-	bottom: 0;
-	width: 100%;
-}
+body { font-family: 'Helvetica','Helvetica Neue','Arial',sans-serif; }
 
 #top-holder {
   position: fixed;
@@ -70,17 +38,41 @@ body { background-color: rgb(77,77,77); font-family: 'Helvetica','Helvetica Neue
 
 #about-content { font-size: 0.8em; line-height: 1.5em;}
 
-</style>
+.line { fill: none;
+	stroke: steelblue;
+	stroke-width: 1.5px;
+}
 
+
+.x.axis path {
+  display: none;
+}
+
+.x-brush .extent {
+  stroke:#737373;
+  fill-opacity:0.125;
+  shape-rendering:crispEdges;
+  }
+
+.tick {
+	font-size: 0.8em;
+}
+
+#brush-holder { 
+	position: fixed;
+	bottom: 0;
+	width: 100%;
+}
+
+</style>
 </head>
 
 <body>
-
 <div id="map"></div>
 
 <div id="top-holder">
 <div id="title-bar">
-  <div id="title">Madison Architectural History Viewer (v06)</div>
+  <div id="title">Madison Architectural History Viewer (v03)</div>
   <div id="legend-button" class="choice-button" onClick="triggerMenu('#legend-content');">Legend</div>
   <div id="about-button" class="choice-button" onClick="triggerMenu('#about-content');">About</div>
 <div style="clear:both;"></div>
@@ -97,14 +89,34 @@ A very much in-progress project by <a href="http://people.matinic.us/garrett/">G
 
 <div id="brush-holder"></div>
 
-<script src="//ajax.googleapis.com/ajax/libs/jquery/1.11.2/jquery.min.js"></script>
-<script src="http://cdn.leafletjs.com/leaflet-0.7.2/leaflet.js"></script>
-<script src="http://d3js.org/d3.v3.min.js"></script>
-<script src='./canvas_overlay.js'></script>
+</body>
 
+<script src="http://d3js.org/d3.v3.min.js"></script>
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/2.1.3/jquery.min.js"></script>
 
 <script>
 
+function triggerMenu(choice,all) {
+
+  $(".roll-down").slideUp();
+  if(!all) { $(choice).slideDown(); }
+
+}
+
+var c_width = window.innerWidth,
+    c_height = window.innerHeight;
+
+var canvas = d3.select("#map").append("canvas")
+    .attr("width", c_width)
+    .attr("height", c_height);
+    
+var context = canvas.node().getContext("2d");
+
+var origin = [-89.597733,43.176641],
+	end = [-89.189866,42.971497];
+	
+var transform = c_width/(Math.abs(end[0] - origin[0]));
+	
 var colors = {
 
 "Apartment" : "#205E31",
@@ -141,24 +153,34 @@ var colors = {
 
 }
 
+function drawPoint(lonlat, style) {
 
-//Build the map
-var the_map = L.map('map')
-	.setView([43.074907,-89.38556],12)
+var x = (Math.abs(lonlat[0]-origin[0])) * transform;
+var y = (Math.abs(lonlat[1]-origin[1])) * transform;
 
-the_map.zoomControl.setPosition('bottomleft');
+if(colors[style]) { context.fillStyle = colors[style]; } else { context.fillStyle = "#000"; }
+context.fillRect(x,y,1,1);
 
-L.tileLayer("http://{s}.sm.mapstack.stamen.com/(toner-background,$dcdcdc[difference],$dcdcdc[@23],$000[hsl-saturation@20])/{z}/{x}/{y}.png", {'attribution': '<a href="http://stamen.com">Stamen Design</a>'})
-    .addTo(the_map);
+} 
 
-// Create empty canvasOverlay
-var the_canvas = L.canvasOverlay()
-  .addTo(the_map);
 
-//Build the line graph and brusher
-var margin = {top: 20, right: 20, bottom: 40, left: 20},
-    width = $('body').innerWidth() - margin.left - margin.right,
-    height = 0.2*$('body').innerHeight() - margin.top - margin.bottom;
+function renderCanvas(start_year, end_year) {
+
+context.clearRect(0,0,c_width,c_height);
+
+d3.csv("./data/madison.csv", function(error, data) { 
+	
+	data.forEach( function(d) { 
+		if(d.year >= start_year && d.year <= end_year) {
+		drawPoint( [+d.lon, +d.lat], d.style ); } } ); 
+	
+ } );
+
+}
+
+var margin = {top: 20, right: 60, bottom: 40, left: 20},
+    width = c_width - margin.left - margin.right,
+    height = 100 - margin.top - margin.bottom;
 
 var x = d3.time.scale()
     .range([0, width]);
@@ -195,7 +217,8 @@ d3.csv("./data/yeartotals.csv", function(error, data) {
  x.domain(d3.extent(data, function(d) { return d.year; }));
  y.domain(d3.extent(data, function(d) { return d.builds; }));
 
-	svg.append("g")
+
+  svg.append("g")
       .attr("class", "x axis")
       .attr("transform", "translate(0," + height + ")")
       .call(xAxis);
@@ -214,54 +237,26 @@ d3.csv("./data/yeartotals.csv", function(error, data) {
 });
 
 
-
 function renderFromBrush() {
 
-if(brush.empty()) { var start_date = 0, end_date = 2015; }
-else { 
 	var timeFormat = d3.time.format("%Y");
-	var start_date = timeFormat(brush.extent()[0]),
-		end_date = timeFormat(brush.extent()[1]); }
 
-d3.csv('./data/madison.csv', function(error, data) {
+	if(brush.empty()) { renderCanvas(0,2500); }
+	else {
 
-the_canvas
-	.drawing(colorDots)
-	.params({'data': data, 'start_date':start_date, 'end_date':end_date})
-    .redraw();
+		start_year = timeFormat(brush.extent()[0]);
+		end_year = timeFormat(brush.extent()[1]);
 
-}); }
+		renderCanvas(start_year,end_year);
+	}
 
-
-function colorDots(canvasOverlay, params) {
-    var ctx = params.canvas.getContext('2d');
-    ctx.clearRect(0, 0, params.canvas.width, params.canvas.height);
-    params.options.data.map(function (d, i) {
-        if (params.bounds.contains([+d.lat, +d.lon]) & +d.year > +params.options.start_date && +d.year < +params.options.end_date) {
-            dot = canvasOverlay._map.latLngToContainerPoint([+d.lat,+d.lon]);
-            var style = d.style;
-    		if(colors[style]) { var color = colors[style]; } else { var color = "#ccc"; }	
-    		ctx.fillStyle = color;
-    		if(params.zoom > 14) { var rad = 3; } else if (params.zoom > 12) { var rad = 1; } else { var rad = 0.5; }
-            ctx.beginPath();
-            ctx.arc(dot.x, dot.y, rad, 0, Math.PI*2);
-            ctx.fill();
-            ctx.closePath();
-        }
-    });
-}
-
-$('body').ready( renderFromBrush );
-
-function triggerMenu(choice,all) {
-
-  $(".roll-down").slideUp();
-  if(!all) { $(choice).slideDown(); }
 
 }
 
 
-$("#about-content").width($("#title-bar").width()-16); 
+renderCanvas(0,2015);
+
+//below needs cleanup
 
 var legend_html = ""
 
@@ -276,14 +271,9 @@ legend_html += '</div>';
 
 })
       
-$("#legend-innards").html(legend_html);
+$("#legend-innards").html(legend_html)
 
-
-
+$("#about-content").width($("#title-bar").width()-16); 
 
 
 </script>
-
-
-
-</body>
