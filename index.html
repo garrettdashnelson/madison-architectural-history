@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <meta charset="utf-8">
 <head>
+<title>Madison Architectural History Viewer</title>
 
 <link rel="stylesheet" href="http://cdn.leafletjs.com/leaflet-0.7.2/leaflet.css" />
 
@@ -70,21 +71,24 @@ body { background-color: rgb(77,77,77); font-family: 'Helvetica','Helvetica Neue
 
 #about-content { font-size: 0.8em; line-height: 1.5em;}
 
+#loading-splash { position: absolute; top: 0; left: 0; bottom: 0; right: 0; background-color: #000; opacity: 0.9; z-index: 10; color: #fff; font-size: 1.2em; font-weight: bold; text-align: center; padding-top: 50px;}
 </style>
 
 </head>
 
 <body>
 
+<div id="loading-splash">Loading data...</div>
+
 <div id="map"></div>
 
 <div id="top-holder">
 <div id="title-bar">
-  <div id="title">Madison Architectural History Viewer (v06)</div>
+  <div id="title">Madison Architectural History Viewer (v07)</div>
   <div id="legend-button" class="choice-button" onClick="triggerMenu('#legend-content');">Legend</div>
   <div id="about-button" class="choice-button" onClick="triggerMenu('#about-content');">About</div>
 <div style="clear:both;"></div>
-</div> 
+</div>
 
 <div id="legend-content" class="roll-down"><div id="legend-innards"></div><div class="hider" onClick="triggerMenu('',true);">&#9650; Hide</div><div style="clear:both;"></div>
 </div>
@@ -184,7 +188,7 @@ var parseDate = d3.time.format("%Y").parse;
 
 var brush = d3.svg.brush()
 	.x(x)
-	.on('brushend',renderFromBrush)
+	.on('brushend',renderVisualization);
 
 d3.csv("./data/yeartotals.csv", function(error, data) {
 	data.forEach(function(d) {
@@ -214,24 +218,7 @@ d3.csv("./data/yeartotals.csv", function(error, data) {
 });
 
 
-
-function renderFromBrush() {
-
-if(brush.empty()) { var start_date = 0, end_date = 2015; }
-else { 
-	var timeFormat = d3.time.format("%Y");
-	var start_date = timeFormat(brush.extent()[0]),
-		end_date = timeFormat(brush.extent()[1]); }
-
-d3.csv('./data/madison.csv', function(error, data) {
-
-the_canvas
-	.drawing(colorDots)
-	.params({'data': data, 'start_date':start_date, 'end_date':end_date})
-    .redraw();
-
-}); }
-
+// Function to draw dots on canvas
 
 function colorDots(canvasOverlay, params) {
     var ctx = params.canvas.getContext('2d');
@@ -240,9 +227,9 @@ function colorDots(canvasOverlay, params) {
         if (params.bounds.contains([+d.lat, +d.lon]) & +d.year > +params.options.start_date && +d.year < +params.options.end_date) {
             dot = canvasOverlay._map.latLngToContainerPoint([+d.lat,+d.lon]);
             var style = d.style;
-    		if(colors[style]) { var color = colors[style]; } else { var color = "#ccc"; }	
-    		ctx.fillStyle = color;
-    		if(params.zoom > 14) { var rad = 3; } else if (params.zoom > 12) { var rad = 1; } else { var rad = 0.5; }
+        if(colors[style]) { var color = colors[style]; } else { var color = "#ccc"; } 
+        ctx.fillStyle = color;
+        if(params.zoom > 14) { var rad = 3; } else if (params.zoom > 12) { var rad = 1; } else { var rad = 0.5; }
             ctx.beginPath();
             ctx.arc(dot.x, dot.y, rad, 0, Math.PI*2);
             ctx.fill();
@@ -251,7 +238,48 @@ function colorDots(canvasOverlay, params) {
     });
 }
 
-$('body').ready( renderFromBrush );
+
+// Function to clear splash hider when visualization loads 
+
+function clearSplash() {
+  $('#loading-splash').hide();
+}
+
+
+// Draw line graph and render dots on map
+
+function renderVisualization() {
+
+
+if(brush.empty()) { var start_date = 0, end_date = 2015; }
+else { 
+	var timeFormat = d3.time.format("%Y");
+	var start_date = timeFormat(brush.extent()[0]),
+		end_date = timeFormat(brush.extent()[1]); }
+
+d3.csv('./data/madison.csv', function(error, data) {f06
+
+the_canvas
+	.drawing(colorDots)
+	.params({'data': data, 'start_date':start_date, 'end_date':end_date})
+  .redraw();
+
+$('#loading-splash').hide();
+
+} );
+
+
+ };
+
+
+
+// When page loaded, call renderVisualization
+
+$('body').ready( renderVisualization );
+
+
+
+// ** UI Functions **
 
 function triggerMenu(choice,all) {
 
@@ -263,7 +291,8 @@ function triggerMenu(choice,all) {
 
 $("#about-content").width($("#title-bar").width()-16); 
 
-var legend_html = ""
+
+var legend_html = "";
 
 $.each(colors, function(style, color) { 
 
