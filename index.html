@@ -3,7 +3,7 @@
 <head>
 <title>Madison Architectural History Viewer</title>
 
-<link rel="stylesheet" href="http://cdn.leafletjs.com/leaflet-0.7.2/leaflet.css" />
+<link rel="stylesheet" href="https://cdn.leafletjs.com/leaflet-0.7.2/leaflet.css" />
 
 <style type="text/css">
 
@@ -102,8 +102,8 @@ A very much in-progress project by <a href="http://people.matinic.us/garrett/">G
 <div id="brush-holder"></div>
 
 <script src="//ajax.googleapis.com/ajax/libs/jquery/1.11.2/jquery.min.js"></script>
-<script src="http://cdn.leafletjs.com/leaflet-0.7.2/leaflet.js"></script>
-<script src="http://d3js.org/d3.v3.min.js"></script>
+<script src="https://cdn.leafletjs.com/leaflet-0.7.2/leaflet.js"></script>
+<script src="https://d3js.org/d3.v3.min.js"></script>
 <script src='./canvas_overlay.js'></script>
 
 
@@ -152,7 +152,7 @@ var the_map = L.map('map')
 
 the_map.zoomControl.setPosition('bottomleft');
 
-L.tileLayer("http://{s}.sm.mapstack.stamen.com/(toner-background,$dcdcdc[difference],$dcdcdc[@23],$000[hsl-saturation@20])/{z}/{x}/{y}.png", {'attribution': '<a href="http://stamen.com">Stamen Design</a>'})
+L.tileLayer("https://{s}.sm.mapstack.stamen.com/(toner-background,$dcdcdc[difference],$dcdcdc[@23],$000[hsl-saturation@20])/{z}/{x}/{y}.png", {'attribution': '<a href="http://stamen.com">Stamen Design</a>'})
     .addTo(the_map);
 
 // Create empty canvasOverlay
